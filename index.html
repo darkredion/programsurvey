@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>교육과정 만족도</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 * { box-sizing: border-box; }
 html, body { height:100%; }
@@ -17,10 +18,11 @@ body {
   display:flex; flex-direction:column; justify-content:flex-start;
 }
 .wrap { max-width:1200px; margin:0 auto; width:100%; flex:1; display:flex; flex-direction:column; }
-
 .top { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:26px; }
 .brand h1 { margin:0; font-size:22px; font-weight:800; letter-spacing:-0.03em; }
 .brand p { margin:4px 0 0; font-size:12.5px; color:var(--mute); }
+.topright { display:flex; align-items:center; gap:10px; }
+.who { font-size:11.5px; color:var(--mute); }
 .tabs { display:flex; gap:4px; background:#DDE3EC; padding:3px; border-radius:9px; }
 .tabs button { border:0; background:transparent; font-family:inherit; font-size:12.5px; font-weight:700; color:var(--mute); padding:7px 14px; border-radius:7px; cursor:pointer; }
 .tabs button[data-on="1"] { background:var(--card); color:var(--ink); box-shadow:0 1px 2px rgba(16,27,45,.12); }
@@ -33,15 +35,13 @@ body {
 .pick select { -webkit-appearance:none; appearance:none; width:100%; font-family:inherit; font-size:13.5px; font-weight:600; color:var(--ink); background:#F7F9FC; border:1px solid var(--line); border-radius:9px; padding:10px 30px 10px 12px; cursor:pointer; text-overflow:ellipsis; }
 .pick select:hover { border-color:#AEBACD; }
 .pick[data-set="1"] select { background:#fff; border-color:#AEBACD; }
-select:focus-visible, button:focus-visible, input:focus-visible { outline:2px solid var(--navy); outline-offset:2px; }
-.hint { font-size:12.5px; color:var(--mute); }
+select:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible { outline:2px solid var(--navy); outline-offset:2px; }
 
 .result { margin-top:26px; flex:1; display:flex; flex-direction:column; }
 .rhead { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
 .rhead h2 { margin:0; font-size:19px; font-weight:800; letter-spacing:-0.03em; }
 .rhead .meta { font-size:12.5px; color:var(--mute); }
 .rhead .meta b { font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
-
 .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
 .metric { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 20px 18px; display:flex; flex-direction:column; justify-content:center; }
 .metric .k { font-size:12px; font-weight:700; color:var(--mute); }
@@ -91,12 +91,18 @@ select:focus-visible, button:focus-visible, input:focus-visible { outline:2px so
 .btn { font-family:inherit; font-size:13px; font-weight:700; border-radius:9px; padding:9px 16px; cursor:pointer; border:1px solid var(--navy); background:var(--navy); color:#fff; }
 .btn.ghost { background:#fff; color:var(--ink); border-color:var(--line); }
 .btn.small { font-size:12px; padding:7px 12px; }
+.btn[disabled] { opacity:.45; cursor:default; }
 .fields { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:15px; }
+.fields.two { grid-template-columns:1fr 1fr; max-width:520px; }
 .field label { display:block; font-size:11px; font-weight:700; color:var(--mute); margin-bottom:5px; }
 .field input { width:100%; font-family:inherit; font-size:13.5px; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink); }
 .note { font-size:12.5px; margin-top:12px; padding:10px 12px; border-radius:8px; }
 .note.ok { background:#E1EAF6; color:var(--navy-deep); }
 .note.err { background:#FBECE8; color:#8F3520; }
+.note.warn { background:#FAF3E3; color:#7A5B12; }
+.bannerbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:12.5px; padding:10px 14px; border-radius:10px; margin-bottom:14px; background:var(--slate-soft); border:1px solid var(--slate-line); color:var(--slate-dim); }
+.bannerbar b { color:var(--ink); font-weight:700; }
+.bannerbar.bad { background:#FBECE8; border-color:#EDD3CB; color:#8F3520; }
 table { width:100%; border-collapse:collapse; margin-top:8px; font-size:13px; }
 th { text-align:left; font-size:11px; color:var(--mute); font-weight:700; padding:8px; border-bottom:1px solid var(--line); }
 td { padding:9px 8px; border-bottom:1px solid #EEF1F6; }
@@ -104,8 +110,7 @@ td.num { font-variant-numeric:tabular-nums; color:var(--mute); font-size:12.5px;
 td button { font-family:inherit; font-size:11.5px; border:1px solid var(--line); background:#fff; color:#A03A26; border-radius:6px; padding:4px 9px; cursor:pointer; }
 .empty { text-align:center; padding:44px 20px; color:var(--mute); font-size:13.5px; }
 .empty b { display:block; color:var(--ink); font-size:15px; font-weight:800; margin-bottom:6px; }
-.hidden { display:none !important; }
-
+code { background:#EEF1F6; padding:1px 5px; border-radius:4px; font-size:12px; }
 @media (max-width:720px) {
   body { padding:20px 14px 24px; }
   .grid { grid-template-columns:1fr; }
@@ -122,12 +127,15 @@ td button { font-family:inherit; font-size:11.5px; border:1px solid var(--line);
       <h1>교육과정 만족도</h1>
       <p>설문 원본을 등록하고 연도 · 강사 · 과정 · 차수 순으로 결과를 확인합니다.</p>
     </div>
-    <div class="tabs">
-      <button id="tab-view" data-on="1">만족도 보기</button>
-      <button id="tab-manage">자료 등록</button>
+    <div class="topright">
+      <span class="who" id="who"></span>
+      <div class="tabs">
+        <button id="tab-view" data-on="1">만족도 보기</button>
+        <button id="tab-manage">자료 등록</button>
+      </div>
     </div>
   </div>
-  <div id="warn"></div>
+  <div id="banner"></div>
   <div id="main" style="flex:1; display:flex; flex-direction:column;"></div>
 </div>
 <div id="modal-root"></div>
@@ -135,24 +143,56 @@ td button { font-family:inherit; font-size:11.5px; border:1px solid var(--line);
 <script>
 "use strict";
 
-/* ============================ 저장 ============================ */
-var KEY = "training-survey-store-v1";
-var store = { datasets: [], edits: {} };
-var storageOk = true;
+/* =====================================================================
+   ▼▼▼ 여기 두 줄만 본인 Supabase 프로젝트 값으로 바꾸세요 ▼▼▼
+   Supabase 대시보드 → Project Settings → API 에서 확인합니다.
+   anon key는 공개용 키라 브라우저에 넣어도 됩니다. service_role 키는 절대 넣지 마세요.
+   ===================================================================== */
+var SUPABASE_URL = "";
+var SUPABASE_ANON_KEY = "";
+/* ===================================================================== */
 
-function loadStore() {
+var sb = null, connError = "";
+var datasets = [], edits = {}, session = null;
+var loading = true;
+
+function initClient() {
+  var url = SUPABASE_URL, key = SUPABASE_ANON_KEY;
   try {
-    var raw = window.localStorage.getItem(KEY);
-    if (raw) {
-      var p = JSON.parse(raw);
-      store = { datasets: p.datasets || [], edits: p.edits || {} };
-    }
-  } catch (e) { storageOk = false; }
+    var saved = JSON.parse(localStorage.getItem("survey-sb-config") || "null");
+    if (saved && !url) { url = saved.url; key = saved.key; }
+  } catch (e) {}
+  if (!url || !key) { connError = "setup"; return; }
+  if (!window.supabase) { connError = "라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요."; return; }
+  sb = window.supabase.createClient(url, key);
 }
-function saveStore() {
-  if (!storageOk) return;
-  try { window.localStorage.setItem(KEY, JSON.stringify(store)); }
-  catch (e) { storageOk = false; renderWarn(); }
+
+/* ============================ 서버 통신 ============================ */
+async function loadAll() {
+  if (!sb) return;
+  loading = true; render();
+  try {
+    var a = await sb.from("survey_datasets").select("*").order("year", { ascending: false });
+    if (a.error) throw a.error;
+    datasets = (a.data || []).map(function (r) {
+      return { id: r.id, year: r.year, instructor: r.instructor, course: r.course, round: r.round, fileName: r.file_name, responses: r.responses || [] };
+    });
+    var b = await sb.from("survey_edits").select("*");
+    if (b.error) throw b.error;
+    edits = {};
+    (b.data || []).forEach(function (r) { edits[r.key] = r.points; });
+    connError = "";
+  } catch (e) {
+    connError = e.message || "데이터를 불러오지 못했습니다.";
+  }
+  loading = false; render();
+}
+function subscribeRealtime() {
+  if (!sb) return;
+  sb.channel("survey-changes")
+    .on("postgres_changes", { event: "*", schema: "public", table: "survey_datasets" }, loadAll)
+    .on("postgres_changes", { event: "*", schema: "public", table: "survey_edits" }, loadAll)
+    .subscribe();
 }
 
 /* ============================ 엑셀 파싱 ============================ */
@@ -169,8 +209,7 @@ function yearOf(v) {
   return m ? parseInt(m[1], 10) : null;
 }
 function locateSheet(rows) {
-  var limit = Math.min(rows.length, 40);
-  for (var i = 0; i < limit; i++) {
+  for (var i = 0; i < Math.min(rows.length, 40); i++) {
     var cells = (rows[i] || []).map(norm);
     var cOverall = -1, cRec = -1, cDel = -1, cFree = -1, cValid = -1, cStart = -1;
     cells.forEach(function (c, idx) {
@@ -201,16 +240,16 @@ function parseWorkbook(buffer) {
   var best = null;
   wb.SheetNames.forEach(function (name) {
     var rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: null, blankrows: false });
-    var found = locateSheet(rows);
-    if (found && (!best || found.data.length > best.data.length)) best = found;
+    var f = locateSheet(rows);
+    if (f && (!best || f.data.length > best.data.length)) best = f;
   });
   if (!best) throw new Error("설문 문항을 찾지 못했습니다. '교육과정 전반', '추천', '강의능력' 문항이 있는 응답 파일인지 확인해 주세요.");
   var tally = {};
   best.data.forEach(function (d) { if (d.y) tally[d.y] = (tally[d.y] || 0) + 1; });
-  var years = Object.keys(tally).sort(function (a, b) { return tally[b] - tally[a]; });
+  var ys = Object.keys(tally).sort(function (a, b) { return tally[b] - tally[a]; });
   return {
     responses: best.data.map(function (d) { return { o: d.o, r: d.r, d: d.d, t: d.t }; }),
-    yearGuess: years.length ? parseInt(years[0], 10) : new Date().getFullYear(),
+    yearGuess: ys.length ? parseInt(ys[0], 10) : new Date().getFullYear(),
     hasDelivery: best.hasDelivery
   };
 }
@@ -220,25 +259,18 @@ function stat(rows, key) {
   var vals = rows.map(function (r) { return r[key]; }).filter(function (v) { return typeof v === "number" && isFinite(v); });
   if (!vals.length) return null;
   var sum = vals.reduce(function (a, b) { return a + b; }, 0);
-  var dist = [1, 2, 3, 4, 5].map(function (s) {
-    return vals.filter(function (v) { return Math.round(v) === s; }).length;
-  });
-  return { avg: sum / vals.length, n: vals.length, dist: dist };
+  return { avg: sum / vals.length, n: vals.length,
+    dist: [1, 2, 3, 4, 5].map(function (s) { return vals.filter(function (v) { return Math.round(v) === s; }).length; }) };
 }
 var TRIVIAL = ["없음","없습니다","없어요","무","특별히없음","해당없음","na","x","-",".","..","…","좋음","좋아요","감사합니다","감사해요"];
-function isSubstantive(t) {
-  var n = norm(t).toLowerCase();
-  return n.length > 3 && TRIVIAL.indexOf(n) < 0;
-}
+function isSubstantive(t) { var n = norm(t).toLowerCase(); return n.length > 3 && TRIVIAL.indexOf(n) < 0; }
 function roundSort(a, b) {
   var na = parseFloat(String(a).replace(/[^\d.]/g, "")), nb = parseFloat(String(b).replace(/[^\d.]/g, ""));
   if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
   return String(a).localeCompare(String(b), "ko");
 }
-
-/* ============================ 개선점 요약 (오프라인 규칙) ============================ */
 var RULES = [
-  { title: "자료 사전 배포", detail: "강의 자료의 사전 배포 요청", re: /자료|피피티|ppt|pt자료|발표자료|교재|파일|공유|배포/i },
+  { title: "자료 사전 배포", detail: "강의 자료의 사전 배포 요청", re: /자료|피피티|ppt|발표자료|교재|파일|공유|배포/i },
   { title: "실전 분석 보강", detail: "동종업계 기업 간 재무상태 비교 등 실전 분석 내용이 부족", re: /실전|사례|구체|심화|깊이|종목|주식|실무|적용|디테일|분석|예시/i },
   { title: "질의응답 시간", detail: "질의응답 시간이 없어 궁금증 해소가 어려웠다는 의견", re: /질문|질의|q&a|qa|답변|문답/i },
   { title: "강의 시간 확대", detail: "강의 시간이 짧아 내용 소화에 시간 부족", re: /시간이짧|시간짧|시간부족|짧|더길게|시간이더|길게/i },
@@ -250,24 +282,18 @@ var RULES = [
 function ruleSummary(texts) {
   var pool = texts.filter(isSubstantive);
   if (!pool.length) return [];
-  var hits = RULES.map(function (rule) {
-    var n = pool.filter(function (t) { return rule.re.test(norm(t)); }).length;
-    return { title: rule.title, detail: rule.detail, count: n };
+  var hits = RULES.map(function (r) {
+    return { title: r.title, detail: r.detail, count: pool.filter(function (t) { return r.re.test(norm(t)); }).length };
   }).filter(function (h) { return h.count > 0; });
   hits.sort(function (a, b) { return b.count - a.count; });
   var out = hits.slice(0, 3);
-  if (out.length < 3) {
-    out.push({ title: "기타 개별 의견", detail: "분류되지 않은 개별 의견은 원문 확인 필요", count: pool.length });
-  }
+  if (out.length < 3) out.push({ title: "기타 개별 의견", detail: "분류되지 않은 개별 의견은 원문 확인 필요", count: pool.length });
   return out.slice(0, 3);
 }
 
 /* ============================ 상태 ============================ */
-var tab = "view";
-var sel = { year: null, instructor: null, course: null, round: null };
-var pending = null;       // 업로드 후 등록 대기 자료
-var msg = null;
-var editing = false;
+var tab = "view", sel = { year: null, instructor: null, course: null, round: null };
+var pending = null, msg = null, editing = false, onlyReal = false, busy = false;
 
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -275,24 +301,13 @@ function esc(s) {
   });
 }
 function uniq(a) { var s = []; a.forEach(function (v) { if (s.indexOf(v) < 0) s.push(v); }); return s; }
-
-function years() { return uniq(store.datasets.map(function (d) { return d.year; })).sort(function (a, b) { return b - a; }); }
-function instructors() {
-  return uniq(store.datasets.filter(function (d) { return d.year === sel.year; }).map(function (d) { return d.instructor; }))
-    .sort(function (a, b) { return a.localeCompare(b, "ko"); });
-}
-function courses() {
-  return uniq(store.datasets.filter(function (d) { return d.year === sel.year && d.instructor === sel.instructor; }).map(function (d) { return d.course; }))
-    .sort(function (a, b) { return a.localeCompare(b, "ko"); });
-}
-function rounds() {
-  return uniq(store.datasets.filter(function (d) {
-    return d.year === sel.year && d.instructor === sel.instructor && d.course === sel.course;
-  }).map(function (d) { return d.round; })).sort(roundSort);
-}
+function years() { return uniq(datasets.map(function (d) { return d.year; })).sort(function (a, b) { return b - a; }); }
+function instructors() { return uniq(datasets.filter(function (d) { return d.year === sel.year; }).map(function (d) { return d.instructor; })).sort(function (a, b) { return a.localeCompare(b, "ko"); }); }
+function courses() { return uniq(datasets.filter(function (d) { return d.year === sel.year && d.instructor === sel.instructor; }).map(function (d) { return d.course; })).sort(function (a, b) { return a.localeCompare(b, "ko"); }); }
+function rounds() { return uniq(datasets.filter(function (d) { return d.year === sel.year && d.instructor === sel.instructor && d.course === sel.course; }).map(function (d) { return d.round; })).sort(roundSort); }
 function autoSelect() {
-  var guard = 0;
-  while (guard++ < 8) {
+  var g = 0;
+  while (g++ < 8) {
     var y = years(), i = instructors(), c = courses(), r = rounds();
     if (!sel.year && y.length === 1) { sel.year = y[0]; continue; }
     if (sel.year && !sel.instructor && i.length === 1) { sel.instructor = i[0]; continue; }
@@ -303,51 +318,70 @@ function autoSelect() {
 }
 function picked() {
   if (!sel.year || !sel.instructor || !sel.course || !sel.round) return null;
-  var items = store.datasets.filter(function (d) {
+  var items = datasets.filter(function (d) {
     return d.year === sel.year && d.instructor === sel.instructor && d.course === sel.course &&
       (sel.round === "__ALL__" || d.round === sel.round);
   });
   if (!items.length) return null;
   var responses = [];
   items.forEach(function (d) { responses = responses.concat(d.responses); });
-  return {
-    items: items, responses: responses,
+  return { items: items, responses: responses,
     overall: stat(responses, "o"), recommend: stat(responses, "r"), delivery: stat(responses, "d"),
-    comments: responses.map(function (r) { return r.t; }).filter(function (t) { return t && t.trim(); })
-  };
+    comments: responses.map(function (r) { return r.t; }).filter(function (t) { return t && t.trim(); }) };
 }
 function sig() { return sel.year + "|" + sel.instructor + "|" + sel.course + "|" + sel.round; }
+function canEdit() { return !!session; }
 
 /* ============================ 렌더 ============================ */
-function renderWarn() {
-  document.getElementById("warn").innerHTML = storageOk ? "" :
-    '<div class="note err" style="margin-bottom:14px">브라우저 저장 공간을 쓸 수 없어 등록한 자료가 창을 닫으면 사라집니다. 자료 등록 탭의 <b>백업 파일 내보내기</b>로 저장해 두세요.</div>';
+function renderBanner() {
+  var el = document.getElementById("banner");
+  if (connError === "setup") { el.innerHTML = ""; return; }
+  if (connError) {
+    el.innerHTML = '<div class="bannerbar bad"><span>서버 연결 오류: ' + esc(connError) + "</span></div>";
+    return;
+  }
+  el.innerHTML = '<div class="bannerbar"><span>' +
+    (loading ? "불러오는 중…" : "공유 데이터 <b>" + datasets.length + "</b>건 · 모든 사용자가 같은 자료를 봅니다") +
+    "</span></div>";
 }
-
+function renderWho() {
+  var el = document.getElementById("who");
+  if (!sb) { el.textContent = ""; return; }
+  el.innerHTML = session
+    ? esc(session.user.email) + ' · <a href="#" id="logout" style="color:inherit">로그아웃</a>'
+    : "보기 전용";
+  var lo = document.getElementById("logout");
+  if (lo) lo.addEventListener("click", async function (e) {
+    e.preventDefault(); await sb.auth.signOut(); session = null; msg = null; render();
+  });
+}
 function meterHtml(v) {
   var out = "";
-  for (var i = 0; i < 5; i++) {
-    var f = Math.max(0, Math.min(1, v - i));
-    out += '<i><b style="width:' + (f * 100) + '%"></b></i>';
-  }
+  for (var i = 0; i < 5; i++) out += '<i><b style="width:' + (Math.max(0, Math.min(1, v - i)) * 100) + '%"></b></i>';
   return '<div class="meter">' + out + "</div>";
 }
 function metricHtml(label, s) {
   var dist = "";
-  if (s) {
-    [5, 4, 3, 2, 1].forEach(function (p) {
-      if (s.dist[p - 1]) dist += "<s>" + p + "점 <b>" + s.dist[p - 1] + "</b></s>";
-    });
-  } else dist = "<s>응답 없음</s>";
-  return '<div class="metric"><div class="k">' + label + '</div>' +
-    '<div class="v">' + (s ? s.avg.toFixed(2) : "–") + '<span>/ 5</span></div>' +
-    meterHtml(s ? s.avg : 0) + '<div class="dist">' + dist + "</div></div>";
+  if (s) [5, 4, 3, 2, 1].forEach(function (p) { if (s.dist[p - 1]) dist += "<s>" + p + "점 <b>" + s.dist[p - 1] + "</b></s>"; });
+  else dist = "<s>응답 없음</s>";
+  return '<div class="metric"><div class="k">' + label + '</div><div class="v">' + (s ? s.avg.toFixed(2) : "–") +
+    '<span>/ 5</span></div>' + meterHtml(s ? s.avg : 0) + '<div class="dist">' + dist + "</div></div>";
+}
+
+function setupScreen() {
+  return '<div class="panel"><h3>연결 설정이 필요합니다</h3>' +
+    '<p class="sub">index.html 위쪽의 <code>SUPABASE_URL</code>과 <code>SUPABASE_ANON_KEY</code> 두 줄을 본인 프로젝트 값으로 채워 저장소에 올리면 모든 사용자에게 적용됩니다. 아래 입력은 내 브라우저에서 먼저 시험해 볼 때만 쓰세요.</p>' +
+    '<div class="fields two"><div class="field"><label>Project URL</label><input id="s-url" placeholder="https://xxxx.supabase.co"></div>' +
+    '<div class="field"><label>anon public key</label><input id="s-key" placeholder="eyJhbGciOi..."></div></div>' +
+    '<button class="btn" id="s-save" style="margin-top:12px">이 브라우저에서 시험 연결</button></div>';
 }
 
 function renderView() {
   var main = document.getElementById("main");
-  if (!store.datasets.length) {
-    main.innerHTML = '<div class="panel"><div class="empty"><b>등록된 설문 자료가 없습니다</b>자료 등록 탭에서 설문 결과 파일을 올리고 과정명과 강사명을 입력해 주세요.</div></div>';
+  if (connError === "setup") { main.innerHTML = setupScreen(); bindSetup(); return; }
+  if (loading && !datasets.length) { main.innerHTML = '<div class="panel"><div class="empty">불러오는 중…</div></div>'; return; }
+  if (!datasets.length) {
+    main.innerHTML = '<div class="panel"><div class="empty"><b>등록된 설문 자료가 없습니다</b>자료 등록 탭에서 설문 결과 파일을 올려 주세요.</div></div>';
     return;
   }
   autoSelect();
@@ -362,100 +396,94 @@ function renderView() {
     if (!s.show) return '<div class="pick"></div>';
     var opts = '<option value="">' + esc(s.label) + " 선택</option>";
     s.options.forEach(function (o) {
-      var label = o === "__ALL__" ? "전체 차수 합산" : String(o);
-      var on = String(sel[s.key]) === String(o) ? " selected" : "";
-      opts += '<option value="' + esc(o) + '"' + on + ">" + esc(label) + "</option>";
+      opts += '<option value="' + esc(o) + '"' + (String(sel[s.key]) === String(o) ? " selected" : "") + ">" +
+        esc(o === "__ALL__" ? "전체 차수 합산" : o) + "</option>";
     });
-    return '<div class="pick" data-set="' + (sel[s.key] ? "1" : "0") + '"><div class="lbl">' + esc(s.label) + '</div>' +
-      '<div class="box"><select data-key="' + s.key + '">' + opts + "</select></div></div>";
+    return '<div class="pick" data-set="' + (sel[s.key] ? "1" : "0") + '"><div class="lbl">' + esc(s.label) +
+      '</div><div class="box"><select data-key="' + s.key + '">' + opts + "</select></div></div>";
   }).join("");
 
-  var p = picked();
-  var body = "";
+  var p = picked(), body = "";
   if (p) {
     var roundLabel = sel.round === "__ALL__" ? "전체 차수 합산" : sel.round;
-    var edited = store.edits[sig()];
+    var edited = edits[sig()];
     var points = edited ? edited.map(function (t) { return { title: null, detail: t, count: 0 }; }) : ruleSummary(p.comments);
-    var list = points.length
-      ? points.map(function (pt) {
-          return "<li>" + (pt.title ? "<b>" + esc(pt.title) + "</b>" + (pt.count ? "<u>" + pt.count + "건</u>" : "") + "<br>" : "") +
-            "<span>" + esc(pt.detail) + "</span></li>";
-        }).join("")
-      : "<li><span>개선 제안에 해당하는 응답 없음</span></li>";
+    var list = points.length ? points.map(function (pt) {
+      return "<li>" + (pt.title ? "<b>" + esc(pt.title) + "</b>" + (pt.count ? "<u>" + pt.count + "건</u>" : "") + "<br>" : "") +
+        "<span>" + esc(pt.detail) + "</span></li>";
+    }).join("") : "<li><span>개선 제안에 해당하는 응답 없음</span></li>";
 
-    var editor = editing
-      ? '<div class="edit" onclick="event.stopPropagation()"><textarea id="edit-box">' +
-        esc(points.map(function (pt) { return pt.detail; }).join("\n")) +
-        '</textarea></div><div class="edit" onclick="event.stopPropagation()">' +
-        '<button class="btn small" id="edit-save">저장</button>' +
-        '<button class="btn small ghost" id="edit-cancel">취소</button>' +
-        (edited ? '<button class="btn small ghost" id="edit-reset">자동 요약으로 되돌리기</button>' : "") + "</div>"
-      : '<div class="edit" onclick="event.stopPropagation()"><button class="btn small ghost" id="edit-open">직접 수정</button></div>';
-
-    body = '<div class="result"><div class="rhead"><h2>' + esc(sel.course) + "</h2>" +
-      '<div class="meta">' + sel.year + "년 · " + esc(sel.instructor) + " 강사 · " + esc(roundLabel) +
-      " · 응답 <b>" + p.responses.length + "</b>건" + (p.items.length > 1 ? " (설문 " + p.items.length + "개 합산)" : "") + "</div></div>" +
+    var editor = "";
+    if (canEdit()) {
+      editor = editing
+        ? '<div class="edit" onclick="event.stopPropagation()"><textarea id="edit-box">' +
+          esc(points.map(function (pt) { return pt.detail; }).join("\n")) + "</textarea></div>" +
+          '<div class="edit" onclick="event.stopPropagation()"><button class="btn small" id="edit-save">저장</button>' +
+          '<button class="btn small ghost" id="edit-cancel">취소</button>' +
+          (edited ? '<button class="btn small ghost" id="edit-reset">자동 요약으로 되돌리기</button>' : "") + "</div>"
+        : '<div class="edit" onclick="event.stopPropagation()"><button class="btn small ghost" id="edit-open">직접 수정</button></div>';
+    }
+    body = '<div class="result"><div class="rhead"><h2>' + esc(sel.course) + '</h2><div class="meta">' + sel.year +
+      "년 · " + esc(sel.instructor) + " 강사 · " + esc(roundLabel) + " · 응답 <b>" + p.responses.length + "</b>건" +
+      (p.items.length > 1 ? " (설문 " + p.items.length + "개 합산)" : "") + "</div></div>" +
       '<div class="grid">' + metricHtml("과정 전반", p.overall) + metricHtml("추천 여부", p.recommend) + metricHtml("강의 전달력", p.delivery) + "</div>" +
-      '<div class="improve" id="improve" role="button" tabindex="0">' +
-      '<div class="k"><span>개선점 요약' + (edited ? " (직접 수정함)" : "") + '</span><em>주관식 ' + p.comments.length + "건 · 눌러서 전체 보기 →</em></div>" +
-      "<ol>" + list + "</ol>" + editor + "</div></div>";
+      '<div class="improve" id="improve" role="button" tabindex="0"><div class="k"><span>개선점 요약' +
+      (edited ? " (직접 수정함)" : "") + '</span><em>주관식 ' + p.comments.length + "건 · 눌러서 전체 보기 →</em></div><ol>" +
+      list + "</ol>" + editor + "</div></div>";
   }
   main.innerHTML = '<div class="rail">' + rail + "</div>" + body;
 
   Array.prototype.forEach.call(main.querySelectorAll("select[data-key]"), function (el) {
     el.addEventListener("change", function () {
-      var key = el.getAttribute("data-key"), val = el.value;
-      var opt = key === "year" ? (val ? parseInt(val, 10) : null) : (val || null);
-      sel[key] = opt;
+      var key = el.getAttribute("data-key"), v = el.value;
+      sel[key] = key === "year" ? (v ? parseInt(v, 10) : null) : (v || null);
       if (key === "year") { sel.instructor = null; sel.course = null; sel.round = null; }
       if (key === "instructor") { sel.course = null; sel.round = null; }
-      if (key === "course") { sel.round = null; }
-      editing = false;
-      render();
+      if (key === "course") sel.round = null;
+      editing = false; render();
     });
   });
   var imp = document.getElementById("improve");
   if (imp) {
-    imp.addEventListener("click", function () { openModal(); });
-    imp.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openModal(); }
-    });
+    imp.addEventListener("click", openModal);
+    imp.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openModal(); } });
   }
-  var open = document.getElementById("edit-open");
-  if (open) open.addEventListener("click", function (e) { e.stopPropagation(); editing = true; render(); });
-  var save = document.getElementById("edit-save");
-  if (save) save.addEventListener("click", function (e) {
+  var o = document.getElementById("edit-open");
+  if (o) o.addEventListener("click", function (e) { e.stopPropagation(); editing = true; render(); });
+  var s2 = document.getElementById("edit-save");
+  if (s2) s2.addEventListener("click", async function (e) {
     e.stopPropagation();
-    var lines = document.getElementById("edit-box").value.split("\n").map(function (t) { return t.trim(); }).filter(Boolean);
-    store.edits[sig()] = lines.slice(0, 3);
-    saveStore(); editing = false; render();
+    var lines = document.getElementById("edit-box").value.split("\n").map(function (t) { return t.trim(); }).filter(Boolean).slice(0, 3);
+    var res = await sb.from("survey_edits").upsert({ key: sig(), points: lines });
+    if (res.error) { alert("저장 실패: " + res.error.message); return; }
+    edits[sig()] = lines; editing = false; render();
   });
-  var cancel = document.getElementById("edit-cancel");
-  if (cancel) cancel.addEventListener("click", function (e) { e.stopPropagation(); editing = false; render(); });
-  var reset = document.getElementById("edit-reset");
-  if (reset) reset.addEventListener("click", function (e) {
-    e.stopPropagation(); delete store.edits[sig()]; saveStore(); editing = false; render();
+  var c2 = document.getElementById("edit-cancel");
+  if (c2) c2.addEventListener("click", function (e) { e.stopPropagation(); editing = false; render(); });
+  var r2 = document.getElementById("edit-reset");
+  if (r2) r2.addEventListener("click", async function (e) {
+    e.stopPropagation();
+    var res = await sb.from("survey_edits").delete().eq("key", sig());
+    if (res.error) { alert("삭제 실패: " + res.error.message); return; }
+    delete edits[sig()]; editing = false; render();
   });
 }
 
-/* ---------- 팝업 ---------- */
-var onlyReal = false;
 function openModal() {
   var p = picked();
   if (!p) return;
-  var root = document.getElementById("modal-root");
   var list = onlyReal ? p.comments.filter(isSubstantive) : p.comments;
   var roundLabel = sel.round === "__ALL__" ? "전체 차수 합산" : sel.round;
-  root.innerHTML = '<div class="backdrop" id="backdrop"><div class="modal" role="dialog" aria-modal="true">' +
-    "<header><div><h3>주관식 응답 전체</h3><p>" + esc(sel.course) + " · " + sel.year + "년 · " + esc(sel.instructor) + " 강사 · " + esc(roundLabel) +
-    '</p></div><button class="x" id="modal-close" aria-label="닫기">✕</button></header>' +
-    '<div class="bar"><button id="only-real" data-on="' + (onlyReal ? "1" : "0") + '">의견 있는 응답만</button><span>' + list.length + "건 표시</span></div><ul>" +
+  document.getElementById("modal-root").innerHTML =
+    '<div class="backdrop" id="backdrop"><div class="modal" role="dialog" aria-modal="true">' +
+    "<header><div><h3>주관식 응답 전체</h3><p>" + esc(sel.course) + " · " + sel.year + "년 · " + esc(sel.instructor) +
+    " 강사 · " + esc(roundLabel) + '</p></div><button class="x" id="modal-close" aria-label="닫기">✕</button></header>' +
+    '<div class="bar"><button id="only-real" data-on="' + (onlyReal ? "1" : "0") + '">의견 있는 응답만</button><span>' +
+    list.length + "건 표시</span></div><ul>" +
     (list.length ? list.map(function (t, i) {
       return '<li data-dim="' + (isSubstantive(t) ? "0" : "1") + '"><i>' + String(i + 1).padStart(2, "0") + "</i><span>" + esc(t) + "</span></li>";
     }).join("") : '<li><span style="color:#98A3B4">표시할 응답이 없습니다.</span></li>') + "</ul></div></div>";
-  document.getElementById("backdrop").addEventListener("click", function (e) {
-    if (e.target.id === "backdrop") closeModal();
-  });
+  document.getElementById("backdrop").addEventListener("click", function (e) { if (e.target.id === "backdrop") closeModal(); });
   document.getElementById("modal-close").addEventListener("click", closeModal);
   document.getElementById("only-real").addEventListener("click", function () { onlyReal = !onlyReal; openModal(); });
   document.getElementById("modal-close").focus();
@@ -463,43 +491,51 @@ function openModal() {
 function closeModal() { document.getElementById("modal-root").innerHTML = ""; }
 window.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
 
-/* ---------- 자료 등록 ---------- */
 function renderManage() {
-  var known = { i: uniq(store.datasets.map(function (d) { return d.instructor; })), c: uniq(store.datasets.map(function (d) { return d.course; })) };
+  var main = document.getElementById("main");
+  if (connError === "setup") { main.innerHTML = setupScreen(); bindSetup(); return; }
+
+  if (!canEdit()) {
+    main.innerHTML = '<div class="panel"><h3>등록 담당자 로그인</h3>' +
+      '<p class="sub">자료 등록과 수정은 담당자만 할 수 있습니다. 계정은 Supabase 대시보드의 Authentication에서 만듭니다.</p>' +
+      '<div class="fields two"><div class="field"><label>이메일</label><input id="l-email" type="email" autocomplete="username"></div>' +
+      '<div class="field"><label>비밀번호</label><input id="l-pw" type="password" autocomplete="current-password"></div></div>' +
+      '<button class="btn" id="l-go" style="margin-top:12px"' + (busy ? " disabled" : "") + ">" + (busy ? "확인 중…" : "로그인") + "</button>" +
+      (msg ? '<div class="note ' + msg.type + '">' + esc(msg.text) + "</div>" : "") + "</div>";
+    document.getElementById("l-go").addEventListener("click", login);
+    document.getElementById("l-pw").addEventListener("keydown", function (e) { if (e.key === "Enter") login(); });
+    return;
+  }
+
+  var known = { i: uniq(datasets.map(function (d) { return d.instructor; })), c: uniq(datasets.map(function (d) { return d.course; })) };
   var form = "";
   if (pending) {
     form = '<div class="fields">' +
-      '<div class="field"><label>연도</label><input id="f-year" inputmode="numeric" value="' + esc(pending.year) + '" placeholder="2026"></div>' +
-      '<div class="field"><label>강사명</label><input id="f-instructor" list="dl-i" value="' + esc(pending.instructor || "") + '" placeholder="홍길동">' +
+      '<div class="field"><label>연도</label><input id="f-year" inputmode="numeric" value="' + esc(pending.year) + '"></div>' +
+      '<div class="field"><label>강사명</label><input id="f-instructor" list="dl-i" placeholder="홍길동">' +
       '<datalist id="dl-i">' + known.i.map(function (n) { return '<option value="' + esc(n) + '">'; }).join("") + "</datalist></div>" +
-      '<div class="field"><label>과정명</label><input id="f-course" list="dl-c" value="' + esc(pending.course || "") + '" placeholder="하반기 경제 전망 특강">' +
+      '<div class="field"><label>과정명</label><input id="f-course" list="dl-c" placeholder="하반기 경제 전망 특강">' +
       '<datalist id="dl-c">' + known.c.map(function (n) { return '<option value="' + esc(n) + '">'; }).join("") + "</datalist></div>" +
-      '<div class="field"><label>차수</label><input id="f-round" value="' + esc(pending.round || "") + '" placeholder="1차"></div></div>' +
-      '<div style="margin-top:14px; display:flex; gap:8px"><button class="btn" id="do-save">등록하기</button>' +
-      '<button class="btn ghost" id="do-cancel">취소</button></div>' +
+      '<div class="field"><label>차수</label><input id="f-round" placeholder="1차"></div></div>' +
+      '<div style="margin-top:14px; display:flex; gap:8px"><button class="btn" id="do-save"' + (busy ? " disabled" : "") + ">" +
+      (busy ? "등록 중…" : "등록하기") + '</button><button class="btn ghost" id="do-cancel">취소</button></div>' +
       (pending.hasDelivery ? "" : '<div class="note err">강의능력(전달력) 문항을 찾지 못했습니다. 해당 지표는 비어 있게 표시됩니다.</div>');
   }
-  var rowsHtml = store.datasets.slice().sort(function (a, b) {
-    return b.year - a.year || a.course.localeCompare(b.course, "ko");
-  }).map(function (d) {
-    return "<tr><td class=num>" + d.year + "</td><td>" + esc(d.instructor) + "</td><td>" + esc(d.course) + "</td><td>" + esc(d.round) +
-      "</td><td class=num>" + d.responses.length + '건</td><td style="text-align:right"><button data-del="' + d.id + '">삭제</button></td></tr>';
-  }).join("");
+  var rowsHtml = datasets.slice().sort(function (a, b) { return b.year - a.year || a.course.localeCompare(b.course, "ko"); })
+    .map(function (d) {
+      return "<tr><td class=num>" + d.year + "</td><td>" + esc(d.instructor) + "</td><td>" + esc(d.course) + "</td><td>" +
+        esc(d.round) + "</td><td class=num>" + d.responses.length + '건</td><td style="text-align:right"><button data-del="' + esc(d.id) + '">삭제</button></td></tr>';
+    }).join("");
 
-  document.getElementById("main").innerHTML =
-    '<div class="panel"><h3>설문 결과 등록</h3><p class="sub">설문 도구에서 내려받은 엑셀 파일을 그대로 올리면 문항을 자동으로 찾습니다. 과정명 · 강사명 · 차수는 파일에 없으므로 직접 입력해 주세요.</p>' +
-    '<div class="drop"><p>' + (pending ? esc(pending.fileName) + " · 응답 " + pending.responses.length + "건 확인" : "xlsx 파일을 선택하세요") + "</p>" +
-    '<input type="file" id="file" accept=".xlsx,.xls" style="display:none">' +
+  main.innerHTML =
+    '<div class="panel"><h3>설문 결과 등록</h3><p class="sub">엑셀을 올리면 문항을 자동으로 찾습니다. 등록하는 즉시 모든 사용자 화면에 반영됩니다.</p>' +
+    '<div class="drop"><p>' + (pending ? esc(pending.fileName) + " · 응답 " + pending.responses.length + "건 확인" : "xlsx 파일을 선택하세요") +
+    '</p><input type="file" id="file" accept=".xlsx,.xls" style="display:none">' +
     '<button class="btn ghost" id="pick-file">파일 선택</button></div>' + form +
     (msg ? '<div class="note ' + msg.type + '">' + esc(msg.text) + "</div>" : "") + "</div>" +
-    '<div class="panel" style="margin-top:12px"><h3>등록된 자료 ' + store.datasets.length + "건</h3>" +
-    (store.datasets.length
-      ? "<table><thead><tr><th>연도</th><th>강사</th><th>과정</th><th>차수</th><th>응답</th><th></th></tr></thead><tbody>" + rowsHtml + "</tbody></table>"
-      : '<p class="sub" style="margin:8px 0 0">아직 등록된 자료가 없습니다.</p>') +
-    '<div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap">' +
-    '<button class="btn ghost small" id="export">백업 파일 내보내기</button>' +
-    '<button class="btn ghost small" id="import-btn">백업 파일 불러오기</button>' +
-    '<input type="file" id="import" accept=".json" style="display:none"></div></div>';
+    '<div class="panel" style="margin-top:12px"><h3>등록된 자료 ' + datasets.length + "건</h3>" +
+    (datasets.length ? "<table><thead><tr><th>연도</th><th>강사</th><th>과정</th><th>차수</th><th>응답</th><th></th></tr></thead><tbody>" +
+      rowsHtml + "</tbody></table>" : '<p class="sub" style="margin:8px 0 0">아직 등록된 자료가 없습니다.</p>') + "</div>";
 
   document.getElementById("pick-file").addEventListener("click", function () { document.getElementById("file").click(); });
   document.getElementById("file").addEventListener("change", function (e) {
@@ -510,83 +546,94 @@ function renderManage() {
     reader.onload = function () {
       try {
         var p = parseWorkbook(new Uint8Array(reader.result));
-        pending = { responses: p.responses, hasDelivery: p.hasDelivery, year: p.yearGuess, fileName: file.name, instructor: "", course: "", round: "" };
-      } catch (err) {
-        pending = null; msg = { type: "err", text: err.message };
-      }
+        pending = { responses: p.responses, hasDelivery: p.hasDelivery, year: p.yearGuess, fileName: file.name };
+      } catch (err) { pending = null; msg = { type: "err", text: err.message }; }
       render();
     };
     reader.readAsArrayBuffer(file);
   });
-  var save = document.getElementById("do-save");
-  if (save) save.addEventListener("click", function () {
-    var year = parseInt(document.getElementById("f-year").value, 10);
-    var instructor = document.getElementById("f-instructor").value.trim();
-    var course = document.getElementById("f-course").value.trim();
-    var round = document.getElementById("f-round").value.trim() || "1차";
-    if (!year || year < 2000 || year > 2100) { msg = { type: "err", text: "연도를 네 자리로 입력해 주세요." }; return render(); }
-    if (!instructor) { msg = { type: "err", text: "강사명을 입력해 주세요." }; return render(); }
-    if (!course) { msg = { type: "err", text: "과정명을 입력해 주세요." }; return render(); }
-    store.datasets.push({
-      id: String(Date.now()) + Math.random().toString(36).slice(2, 7),
-      year: year, instructor: instructor, course: course, round: round,
-      fileName: pending.fileName, responses: pending.responses
-    });
-    saveStore();
-    msg = { type: "ok", text: course + " · " + round + " (응답 " + pending.responses.length + "건)을 등록했습니다." };
-    pending = null;
-    render();
-  });
-  var cancel = document.getElementById("do-cancel");
-  if (cancel) cancel.addEventListener("click", function () { pending = null; render(); });
+  var sv = document.getElementById("do-save");
+  if (sv) sv.addEventListener("click", saveDataset);
+  var cc = document.getElementById("do-cancel");
+  if (cc) cc.addEventListener("click", function () { pending = null; render(); });
   Array.prototype.forEach.call(document.querySelectorAll("[data-del]"), function (b) {
-    b.addEventListener("click", function () {
+    b.addEventListener("click", async function () {
       var id = b.getAttribute("data-del");
-      var t = store.datasets.filter(function (d) { return d.id === id; })[0];
-      if (!t || !window.confirm(t.course + " · " + t.round + " 자료를 삭제할까요?")) return;
-      store.datasets = store.datasets.filter(function (d) { return d.id !== id; });
-      saveStore(); msg = { type: "ok", text: "자료를 삭제했습니다." }; render();
+      var t = datasets.filter(function (d) { return String(d.id) === id; })[0];
+      if (!t || !window.confirm(t.course + " · " + t.round + " 자료를 삭제할까요? 모든 사용자에게서 사라집니다.")) return;
+      var res = await sb.from("survey_datasets").delete().eq("id", id);
+      if (res.error) { msg = { type: "err", text: "삭제 실패: " + res.error.message }; return render(); }
+      msg = { type: "ok", text: "삭제했습니다." };
+      await loadAll();
     });
   });
-  document.getElementById("export").addEventListener("click", function () {
-    var blob = new Blob([JSON.stringify(store)], { type: "application/json" });
-    var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "만족도-백업-" + new Date().toISOString().slice(0, 10) + ".json";
-    a.click();
-    URL.revokeObjectURL(a.href);
+}
+
+async function login() {
+  var email = document.getElementById("l-email").value.trim();
+  var pw = document.getElementById("l-pw").value;
+  if (!email || !pw) { msg = { type: "err", text: "이메일과 비밀번호를 입력해 주세요." }; return render(); }
+  busy = true; msg = null; render();
+  var res = await sb.auth.signInWithPassword({ email: email, password: pw });
+  busy = false;
+  if (res.error) { msg = { type: "err", text: "로그인 실패: " + res.error.message }; return render(); }
+  session = res.data.session; msg = null; render();
+}
+
+async function saveDataset() {
+  var year = parseInt(document.getElementById("f-year").value, 10);
+  var instructor = document.getElementById("f-instructor").value.trim();
+  var course = document.getElementById("f-course").value.trim();
+  var round = document.getElementById("f-round").value.trim() || "1차";
+  if (!year || year < 2000 || year > 2100) { msg = { type: "err", text: "연도를 네 자리로 입력해 주세요." }; return render(); }
+  if (!instructor) { msg = { type: "err", text: "강사명을 입력해 주세요." }; return render(); }
+  if (!course) { msg = { type: "err", text: "과정명을 입력해 주세요." }; return render(); }
+  busy = true; render();
+  var res = await sb.from("survey_datasets").insert({
+    year: year, instructor: instructor, course: course, round: round,
+    file_name: pending.fileName, responses: pending.responses
   });
-  document.getElementById("import-btn").addEventListener("click", function () { document.getElementById("import").click(); });
-  document.getElementById("import").addEventListener("change", function (e) {
-    var file = e.target.files[0];
-    if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function () {
-      try {
-        var p = JSON.parse(reader.result);
-        store = { datasets: p.datasets || [], edits: p.edits || {} };
-        saveStore();
-        msg = { type: "ok", text: "백업을 불러왔습니다. 자료 " + store.datasets.length + "건." };
-      } catch (err) { msg = { type: "err", text: "백업 파일을 읽지 못했습니다." }; }
-      render();
-    };
-    reader.readAsText(file);
+  busy = false;
+  if (res.error) { msg = { type: "err", text: "등록 실패: " + res.error.message }; return render(); }
+  msg = { type: "ok", text: course + " · " + round + " (응답 " + pending.responses.length + "건) 등록 완료. 모든 사용자에게 반영됩니다." };
+  pending = null;
+  await loadAll();
+}
+
+function bindSetup() {
+  var s = document.getElementById("s-save");
+  if (!s) return;
+  s.addEventListener("click", function () {
+    var url = document.getElementById("s-url").value.trim();
+    var key = document.getElementById("s-key").value.trim();
+    if (!url || !key) return;
+    localStorage.setItem("survey-sb-config", JSON.stringify({ url: url, key: key }));
+    location.reload();
   });
 }
 
 function render() {
-  renderWarn();
+  renderBanner();
+  renderWho();
   document.getElementById("tab-view").setAttribute("data-on", tab === "view" ? "1" : "0");
   document.getElementById("tab-manage").setAttribute("data-on", tab === "manage" ? "1" : "0");
-  document.getElementById("tab-manage").textContent = "자료 등록" + (store.datasets.length ? " (" + store.datasets.length + ")" : "");
+  document.getElementById("tab-manage").textContent = (canEdit() ? "자료 등록" : "자료 등록") + (datasets.length ? " (" + datasets.length + ")" : "");
   if (tab === "view") renderView(); else renderManage();
 }
 document.getElementById("tab-view").addEventListener("click", function () { tab = "view"; msg = null; render(); });
-document.getElementById("tab-manage").addEventListener("click", function () { tab = "manage"; render(); });
+document.getElementById("tab-manage").addEventListener("click", function () { tab = "manage"; msg = null; render(); });
 
-loadStore();
-if (!store.datasets.length) tab = "manage";
-render();
+(async function start() {
+  initClient();
+  render();
+  if (!sb) return;
+  var s = await sb.auth.getSession();
+  session = s.data.session;
+  sb.auth.onAuthStateChange(function (_e, ns) { session = ns; render(); });
+  await loadAll();
+  subscribeRealtime();
+  if (!datasets.length && canEdit()) { tab = "manage"; render(); }
+})();
 </script>
 </body>
 </html>
